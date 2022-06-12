@@ -120,6 +120,7 @@ static struct dentry *pstore_ftrace_dir;
 
 void pstore_register_ftrace(void)
 {
+	printk("#123abc pstore_register_ftrace called\n");
 	struct dentry *file;
 
 	if (!psinfo->write)

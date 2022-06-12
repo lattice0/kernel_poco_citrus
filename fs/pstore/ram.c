@@ -182,8 +182,12 @@ static int ramoops_read_kmsg_hdr(char *buffer, struct timespec64 *time,
 
 static bool prz_ok(struct persistent_ram_zone *prz)
 {
-	return !!prz && !!(persistent_ram_old_size(prz) +
-			   persistent_ram_ecc_string(prz, NULL, 0));
+	pr_info("#123abc prz_ok called, gonna return !!prz: %d", !!prz);
+	//pr_info("#123abc prz_ok, !!(persistent_ram_old_size(prz) + persistent_ram_ecc_string(prz, NULL, 0)): %d", !!(persistent_ram_old_size(prz) + persistent_ram_ecc_string(prz, NULL, 0)));
+	return !!prz;
+	//return !!prz && !!(persistent_ram_old_size(prz));
+	//return !!prz && !!(persistent_ram_old_size(prz) +
+	//		   persistent_ram_ecc_string(prz, NULL, 0));
 }
 
 static ssize_t ftrace_log_combine(struct persistent_ram_zone *dest,
@@ -240,11 +244,13 @@ static ssize_t ftrace_log_combine(struct persistent_ram_zone *dest,
 
 static ssize_t ramoops_pstore_read(struct pstore_record *record)
 {
+	pr_info("#123abc pstore read 243");
 	ssize_t size = 0;
 	struct ramoops_context *cxt = record->psi->data;
 	struct persistent_ram_zone *prz = NULL;
 	int header_length = 0;
 	bool free_prz = false;
+	pr_info("#123abc pstore read 249");
 
 	/*
 	 * Ramoops headers provide time stamps for PSTORE_TYPE_DMESG, but
@@ -254,18 +260,25 @@ static ssize_t ramoops_pstore_read(struct pstore_record *record)
 	record->time.tv_sec = 0;
 	record->time.tv_nsec = 0;
 	record->compressed = false;
+	pr_info("#123abc pstore read 259 gonna search for zones for dmesg");
+	pr_info("#123abc dump_read_cnt is %d", cxt->dump_read_cnt);
+	pr_info("#123abc max_dump_cnt is %d", cxt->max_dump_cnt);
 
 	/* Find the next valid persistent_ram_zone for DMESG */
 	while (cxt->dump_read_cnt < cxt->max_dump_cnt && !prz) {
+		pr_info("#123abc while");
 		prz = ramoops_get_next_prz(cxt->dprzs, &cxt->dump_read_cnt,
 					   cxt->max_dump_cnt, &record->id,
 					   &record->type,
 					   PSTORE_TYPE_DMESG, 1);
+		//pr_info("#123abc prz is %")
 		if (!prz_ok(prz))
 			continue;
+		pr_info("#123abc looks like it's going to continue and read it");
 		header_length = ramoops_read_kmsg_hdr(persistent_ram_old(prz),
 						      &record->time,
 						      &record->compressed);
+		pr_info("#123abc header length: %d", header_length);
 		/* Clear and skip this DMESG record if it has no valid header */
 		if (!header_length) {
 			persistent_ram_free_old(prz);
@@ -274,23 +287,27 @@ static ssize_t ramoops_pstore_read(struct pstore_record *record)
 		}
 	}
 
-	if (!prz_ok(prz))
+	if (!prz_ok(prz)) {
+		pr_info("#123abc prz_ok(prz) failed #1");
 		prz = ramoops_get_next_prz(&cxt->cprz, &cxt->console_read_cnt,
 					   1, &record->id, &record->type,
 					   PSTORE_TYPE_CONSOLE, 0);
-
-	if (!prz_ok(prz))
+	}
+	if (!prz_ok(prz)) {
+		pr_info("#123abc prz_ok(prz) failed #2");
 		prz = ramoops_get_next_prz(&cxt->mprz, &cxt->pmsg_read_cnt,
 					   1, &record->id, &record->type,
 					   PSTORE_TYPE_PMSG, 0);
-
+	}
 	/* ftrace is last since it may want to dynamically allocate memory. */
 	if (!prz_ok(prz)) {
+		pr_info("#123abc prz_ok(prz) failed #3");
 		if (!(cxt->flags & RAMOOPS_FLAG_FTRACE_PER_CPU)) {
 			prz = ramoops_get_next_prz(cxt->fprzs,
 					&cxt->ftrace_read_cnt, 1, &record->id,
 					&record->type, PSTORE_TYPE_FTRACE, 0);
 		} else {
+			pr_info("!prz_ok(prz) 3 ELSE");
 			/*
 			 * Build a new dummy record which combines all the
 			 * per-cpu records including metadata and ecc info.
@@ -333,6 +350,7 @@ static ssize_t ramoops_pstore_read(struct pstore_record *record)
 	}
 
 	size = persistent_ram_old_size(prz) - header_length;
+	pr_info("#123abc !persistent_ram_old_size is %d", size);
 
 	/* ECC correction notice */
 	record->ecc_notice_size = persistent_ram_ecc_string(prz, NULL, 0);
@@ -722,8 +740,12 @@ static int ramoops_parse_dt(struct platform_device *pdev,
 	return 0;
 }
 
+void pstore_get_records(int quiet);
+
 static int ramoops_probe(struct platform_device *pdev)
 {
+	printk("#123abc ramoops_probe");
+	pr_info("#123abc pr_info ramoops_probe");
 	struct device *dev = &pdev->dev;
 	struct ramoops_platform_data *pdata = dev->platform_data;
 	struct ramoops_platform_data pdata_local;
@@ -774,6 +796,7 @@ static int ramoops_probe(struct platform_device *pdev)
 
 	cxt->size = pdata->mem_size;
 	cxt->phys_addr = pdata->mem_address;
+	pr_info("#123abc pdata->mem_address is 0x%x", pdata->mem_address);
 	cxt->memtype = pdata->mem_type;
 	cxt->record_size = pdata->record_size;
 	cxt->console_size = pdata->console_size;
@@ -783,6 +806,12 @@ static int ramoops_probe(struct platform_device *pdev)
 	cxt->flags = pdata->flags;
 	cxt->ecc_info = pdata->ecc_info;
 
+	pr_info("#123abc record_size: %d", cxt->record_size);
+	pr_info("#123abc console_size: %d", cxt->console_size);
+	pr_info("#123abc pmsg_size: %d", cxt->pmsg_size);
+	pr_info("#123abc ftrace_size: %d", cxt->ftrace_size);
+	pr_info("ecc_size: %d", cxt->ecc_info.ecc_size);
+
 	paddr = cxt->phys_addr;
 
 	dump_mem_sz = cxt->size - cxt->console_size - cxt->ftrace_size
@@ -790,14 +819,20 @@ static int ramoops_probe(struct platform_device *pdev)
 	err = ramoops_init_przs("dump", dev, cxt, &cxt->dprzs, &paddr,
 				dump_mem_sz, cxt->record_size,
 				&cxt->max_dump_cnt, 0, 0);
-	if (err)
+	if (err) {
+		pr_info("#123abc failed initing dump zone");
 		goto fail_out;
-
+	} else {
+		pr_info("#123abc success initing dump zone");
+	}
 	err = ramoops_init_prz("console", dev, cxt, &cxt->cprz, &paddr,
 			       cxt->console_size, 0);
-	if (err)
+	if (err) {
+		pr_info("#123abc failed initing console zone");
 		goto fail_init_cprz;
-
+	} else {
+		pr_info("#123abc success initing console zone");
+	}
 	cxt->max_ftrace_cnt = (cxt->flags & RAMOOPS_FLAG_FTRACE_PER_CPU)
 				? nr_cpu_ids
 				: 1;
@@ -806,14 +841,20 @@ static int ramoops_probe(struct platform_device *pdev)
 				&cxt->max_ftrace_cnt, LINUX_VERSION_CODE,
 				(cxt->flags & RAMOOPS_FLAG_FTRACE_PER_CPU)
 					? PRZ_FLAG_NO_LOCK : 0);
-	if (err)
+	if (err) {
+		pr_info("#123abc failed initing ftrace zone");
 		goto fail_init_fprz;
-
+	} else {
+		pr_info("#123abc sucess initing ftrace zone");
+	}
 	err = ramoops_init_prz("pmsg", dev, cxt, &cxt->mprz, &paddr,
 				cxt->pmsg_size, 0);
-	if (err)
+	if (err) {
+		pr_info("#123abc failed initing pmsg zone");
 		goto fail_init_mprz;
-
+	} else {
+		pr_info("#123abc sucess initing pmsg zone");
+	}
 	cxt->pstore.data = cxt;
 	/*
 	 * Prepare frontend flags based on which areas are initialized.
@@ -821,15 +862,24 @@ static int ramoops_probe(struct platform_device *pdev)
 	 * if there are regions present. For ramoops_init_prz() cases,
 	 * the single region size is how to check.
 	 */
+	pr_info("#123abc gonna load flags");
 	cxt->pstore.flags = 0;
-	if (cxt->max_dump_cnt)
+	if (cxt->max_dump_cnt) {
+		pr_info("#123abc PSTORE_FLAGS_DMESG setted");
 		cxt->pstore.flags |= PSTORE_FLAGS_DMESG;
-	if (cxt->console_size)
+	}
+	if (cxt->console_size) {
+		pr_info("#123abc PSTORE_FLAGS_CONSOLE setted");
 		cxt->pstore.flags |= PSTORE_FLAGS_CONSOLE;
-	if (cxt->max_ftrace_cnt)
+	}
+	if (cxt->max_ftrace_cnt) {
+		pr_info("#123abc PSTORE_FLAGS_FTRACE setted");
 		cxt->pstore.flags |= PSTORE_FLAGS_FTRACE;
-	if (cxt->pmsg_size)
+	}
+	if (cxt->pmsg_size) {
+		pr_info("#123abc PSTORE_FLAGS_PMSG setted");
 		cxt->pstore.flags |= PSTORE_FLAGS_PMSG;
+	}
 
 	/*
 	 * Since bufsize is only used for dmesg crash dumps, it
@@ -846,6 +896,7 @@ static int ramoops_probe(struct platform_device *pdev)
 		}
 	}
 
+	pr_info("gonna call pstore_register");
 	err = pstore_register(&cxt->pstore);
 	if (err) {
 		pr_err("registering with pstore failed\n");
@@ -864,10 +915,12 @@ static int ramoops_probe(struct platform_device *pdev)
 	ramoops_pmsg_size = pdata->pmsg_size;
 	ramoops_ftrace_size = pdata->ftrace_size;
 
+	//pr_info("#123abc pdata->ftrace_size: %d", pdata->ftrace_size);
 	pr_info("attached 0x%lx@0x%llx, ecc: %d/%d\n",
 		cxt->size, (unsigned long long)cxt->phys_addr,
 		cxt->ecc_info.ecc_size, cxt->ecc_info.block_size);
-
+	//EXPERIMENTAL
+	//pstore_get_records(0);
 	return 0;
 
 fail_buf:
@@ -925,6 +978,7 @@ static inline void ramoops_unregister_dummy(void)
 
 static void __init ramoops_register_dummy(void)
 {
+	pr_info("#123abc ramoops_register_dummy (no pstore)");
 	/*
 	 * Prepare a dummy platform data structure to carry the module
 	 * parameters. If mem_size isn't set, then there are no module
@@ -969,16 +1023,19 @@ static void __init ramoops_register_dummy(void)
 
 static int __init ramoops_init(void)
 {
+	pr_info("#123abc ramoops init (no pstore)");
 	int ret;
 
-	ramoops_register_dummy();
+	//ramoops_register_dummy();
 	ret = platform_driver_register(&ramoops_driver);
-	if (ret != 0)
-		ramoops_unregister_dummy();
+	if (ret != 0) {
+		pr_info("#123abc ramoops platform_driver_register failed");
+		//ramoops_unregister_dummy();
+	}
 
 	return ret;
 }
-postcore_initcall(ramoops_init);
+late_initcall(ramoops_init);
 
 static void __exit ramoops_exit(void)
 {

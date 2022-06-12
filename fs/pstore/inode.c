@@ -305,6 +305,7 @@ bool pstore_is_mounted(void)
  */
 int pstore_mkfile(struct dentry *root, struct pstore_record *record)
 {
+	pr_info("#123abc pstore_mkfile");
 	struct dentry		*dentry;
 	struct inode		*inode;
 	int			rc = 0;

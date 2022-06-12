@@ -22,6 +22,7 @@ static DEFINE_MUTEX(pmsg_lock);
 static ssize_t write_pmsg(struct file *file, const char __user *buf,
 			  size_t count, loff_t *ppos)
 {
+	printk("#123abc write_pmsg called for size %d\n", count);
 	struct pstore_record record;
 	int ret;
 
@@ -63,6 +64,7 @@ static char *pmsg_devnode(struct device *dev, umode_t *mode)
 
 void pstore_register_pmsg(void)
 {
+	printk("#123abc pstore_register_pmsg called\n");
 	struct device *pmsg_device;
 
 	pmsg_major = register_chrdev(0, PMSG_NAME, &pmsg_fops);

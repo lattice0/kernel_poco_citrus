@@ -1,0 +1,53 @@
+make[1]: Entering directory '/home/dev/project/poco_m3/kernel/k/out'
+  GEN     ./Makefile
+scripts/kconfig/conf  --syncconfig Kconfig
+  GEN     ./Makefile
+  Using .. as source for kernel
+  CALL    ../scripts/checksyscalls.sh
+  CHK     include/generated/compile.h
+  CC      techpack/audio/ipc/apr.o
+  DTC     arch/arm64/boot/dts/vendor/qcom/bengal.dtb
+  CC      techpack/audio/ipc/apr_v2.o
+  CC      techpack/audio/ipc/apr_tal_rpmsg.o
+  CC      fs/pstore/ram.o
+  DTC     arch/arm64/boot/dts/vendor/qcom/bengal-idp-overlay.dtbo
+../fs/pstore/ram.c:315:32: warning: ISO C90 forbids mixing declarations and code [-Wdeclaration-after-statement]
+                        struct persistent_ram_zone *tmp_prz, *prz_next;
+                                                    ^
+../fs/pstore/ram.c:248:10: warning: ISO C90 forbids mixing declarations and code [-Wdeclaration-after-statement]
+        ssize_t size = 0;
+                ^
+../fs/pstore/ram.c:749:17: warning: ISO C90 forbids mixing declarations and code [-Wdeclaration-after-statement]
+        struct device *dev = &pdev->dev;
+                       ^
+../fs/pstore/ram.c:1026:6: warning: ISO C90 forbids mixing declarations and code [-Wdeclaration-after-statement]
+        int ret;
+            ^
+../fs/pstore/ram.c:978:20: warning: unused function 'ramoops_register_dummy' [-Wunused-function]
+static void __init ramoops_register_dummy(void)
+                   ^
+  DTBOIMG arch/arm64/boot/dtbo.img
+  DTC     arch/arm64/boot/dts/vendor/qcom/bengal.dtb
+  AR      techpack/audio/ipc/built-in.a
+  AR      techpack/audio/built-in.a
+  AR      techpack/built-in.a
+5 warnings generated.
+  AR      fs/pstore/built-in.a
+  AR      fs/built-in.a
+  CAT     arch/arm64/boot/dtb.img
+  GEN     .version
+  CHK     include/generated/compile.h
+  UPD     include/generated/compile.h
+  CC      init/version.o
+  AR      init/built-in.a
+  AR      built-in.a
+  MODPOST vmlinux.o
+  KSYM    .tmp_kallsyms1.o
+  KSYM    .tmp_kallsyms2.o
+  LD      vmlinux
+  SORTEX  vmlinux
+  SYSMAP  System.map
+  OBJCOPY arch/arm64/boot/Image
+  Building modules, stage 2.
+  MODPOST 0 modules
+make[1]: Leaving directory '/home/dev/project/poco_m3/kernel/k/out'

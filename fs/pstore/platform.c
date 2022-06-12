@@ -322,7 +322,7 @@ static void allocate_buf_for_compression(void)
 	big_oops_buf_sz = size;
 	big_oops_buf = buf;
 
-	pr_info("Using compression: %s\n", zbackend->name);
+	pr_info("Using compression LOL: %s\n", zbackend->name);
 }
 
 static void free_buf_for_compression(void)
@@ -471,6 +471,7 @@ static struct kmsg_dumper pstore_dumper = {
  */
 static void pstore_register_kmsg(void)
 {
+	printk("#123abc calling pstore_register_kmsg\n");
 	kmsg_dump_register(&pstore_dumper);
 }
 
@@ -501,6 +502,7 @@ static struct console pstore_console = {
 
 static void pstore_register_console(void)
 {
+	printk("#123abc calling pstore_register_console\n");
 	register_console(&pstore_console);
 }
 
@@ -545,6 +547,7 @@ out:
  */
 int pstore_register(struct pstore_info *psi)
 {
+	pr_info("#123abc pstore_register");
 	struct module *owner = psi->owner;
 
 	if (backend && strcmp(backend, psi->name)) {
@@ -592,14 +595,24 @@ int pstore_register(struct pstore_info *psi)
 	if (pstore_is_mounted())
 		pstore_get_records(0);
 
-	if (psi->flags & PSTORE_FLAGS_DMESG)
+	pr_info("#123abc gonna test flags");
+
+	if (psi->flags & PSTORE_FLAGS_DMESG) {
+		pr_info("#123abc should register kmsg\n");
 		pstore_register_kmsg();
-	if (psi->flags & PSTORE_FLAGS_CONSOLE)
+	}
+	if (psi->flags & PSTORE_FLAGS_CONSOLE) {
+		pr_info("#123abc should register console\n");
 		pstore_register_console();
-	if (psi->flags & PSTORE_FLAGS_FTRACE)
+	}
+	if (psi->flags & PSTORE_FLAGS_FTRACE) {
+		pr_info("#123abc should register ftrace\n");
 		pstore_register_ftrace();
-	if (psi->flags & PSTORE_FLAGS_PMSG)
+	}
+	if (psi->flags & PSTORE_FLAGS_PMSG) {
+		pr_info("#123abc should register pmsg\n");
 		pstore_register_pmsg();
+	}
 
 	/* Start watching for new records, if desired. */
 	if (pstore_update_ms >= 0) {
@@ -647,6 +660,7 @@ EXPORT_SYMBOL_GPL(pstore_unregister);
 
 static void decompress_record(struct pstore_record *record)
 {
+	pr_info("#123abc pstore decompress record called");
 	int unzipped_len;
 	char *decompressed;
 
@@ -701,6 +715,7 @@ static void decompress_record(struct pstore_record *record)
 void pstore_get_backend_records(struct pstore_info *psi,
 				struct dentry *root, int quiet)
 {
+	pr_info("#123abc pstore_get_backend_records");
 	int failed = 0;
 	unsigned int stop_loop = 65536;
 
@@ -725,16 +740,18 @@ void pstore_get_backend_records(struct pstore_info *psi,
 			pr_err("out of memory creating record\n");
 			break;
 		}
+		pr_info("#123abc hmmm, found record I guess");
 		pstore_record_init(record, psi);
-
+		pr_info("#123abc hmmm, gonna read record");
 		record->size = psi->read(record);
 
 		/* No more records left in backend? */
 		if (record->size <= 0) {
+			pr_info("#123abc hmmm, record->size is %d", record->size);
 			kfree(record);
 			break;
 		}
-
+		pr_info("#123abc gonna decompress record");
 		decompress_record(record);
 		rc = pstore_mkfile(root, record);
 		if (rc) {
@@ -777,10 +794,13 @@ static void pstore_timefunc(struct timer_list *unused)
 
 void __init pstore_choose_compression(void)
 {
+	pr_info("#123abc pstore_choose_compression called");
 	const struct pstore_zbackend *step;
 
-	if (!compress)
+	if (!compress) {
+		pr_info("#123abc pstore no compression");
 		return;
+	}
 
 	for (step = zbackends; step->name; step++) {
 		if (!strcmp(compress, step->name)) {
@@ -792,6 +812,7 @@ void __init pstore_choose_compression(void)
 
 static int __init pstore_init(void)
 {
+	pr_info("#123abc pstore_init hmmm");
 	int ret;
 
 	pstore_choose_compression();
@@ -802,7 +823,7 @@ static int __init pstore_init(void)
 	 * initialize compression now.
 	 */
 	allocate_buf_for_compression();
-
+	pr_info("#123abc gonna call pstore_init_fs");
 	ret = pstore_init_fs();
 	if (ret)
 		free_buf_for_compression();

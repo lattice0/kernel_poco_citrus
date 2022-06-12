@@ -282,9 +282,12 @@ static int notrace persistent_ram_update_user(struct persistent_ram_zone *prz,
 	const void __user *s, unsigned int start, unsigned int count)
 {
 	struct persistent_ram_buffer *buffer = prz->buffer;
+	pr_info("#123abc gonna copy buffer from start 0x%x with size 0x%x to address 0x%x", buffer->data + start, count, s);
 	int ret = unlikely(__copy_from_user(buffer->data + start, s, count)) ?
 		-EFAULT : 0;
+	pr_info("#123abc ret is %d", ret);
 	persistent_ram_update_ecc(prz, start, count);
+	pr_info("#123abc gonna return");
 	return ret;
 }
 
@@ -344,11 +347,14 @@ int notrace persistent_ram_write(struct persistent_ram_zone *prz,
 int notrace persistent_ram_write_user(struct persistent_ram_zone *prz,
 	const void __user *s, unsigned int count)
 {
+	pr_info("#123abc persistent_ram_write_user called");
 	int rem, ret = 0, c = count;
 	size_t start;
 
-	if (unlikely(!access_ok(VERIFY_READ, s, count)))
+	if (unlikely(!access_ok(VERIFY_READ, s, count))) {
+		pr_info("#123abc access not ok, returning");
 		return -EFAULT;
+	}
 	if (unlikely(c > prz->buffer_size)) {
 		s += c - prz->buffer_size;
 		c = prz->buffer_size;
@@ -359,17 +365,21 @@ int notrace persistent_ram_write_user(struct persistent_ram_zone *prz,
 	start = buffer_start_add(prz, c);
 
 	rem = prz->buffer_size - start;
+	pr_info("#123abc gonna make choice");
 	if (unlikely(rem < c)) {
+		pr_info("#123abc choice a");
 		ret = persistent_ram_update_user(prz, s, start, rem);
 		s += rem;
 		c -= rem;
 		start = 0;
 	}
-	if (likely(!ret))
+	if (likely(!ret)) {
+		pr_info("#123abc choice b");
 		ret = persistent_ram_update_user(prz, s, start, c);
-
+	}
+	pr_info("#123abc choice made");
 	persistent_ram_update_header_ecc(prz);
-
+	pr_info("#123abc persistent_ram_write_user gonna return with ret: %d", ret);
 	return unlikely(ret) ? ret : count;
 }
 
@@ -467,11 +477,14 @@ static int persistent_ram_buffer_map(phys_addr_t start, phys_addr_t size,
 	prz->paddr = start;
 	prz->size = size;
 
-	if (pfn_valid(start >> PAGE_SHIFT))
+	if (pfn_valid(start >> PAGE_SHIFT)) {
+		pr_info("#123abc mapping to virtual memory");
 		prz->vaddr = persistent_ram_vmap(start, size, memtype);
-	else
+	}
+	else {
+		pr_info("#123abc mapping to I/O");
 		prz->vaddr = persistent_ram_iomap(start, size, memtype);
-
+	}
 	if (!prz->vaddr) {
 		pr_err("%s: Failed to map 0x%llx pages at 0x%llx\n", __func__,
 			(unsigned long long)size, (unsigned long long)start);
